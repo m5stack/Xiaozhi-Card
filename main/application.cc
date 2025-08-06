@@ -108,7 +108,7 @@ Application::Application() {
         "ClockTask",
         4096,
         this, 
-        2,
+        1,
         nullptr
     );
 }
@@ -1084,8 +1084,7 @@ void Application::SetDeviceState(DeviceState state) {
     static int64_t listen_start_time = 0; // 单次监听开始时间
     static int64_t total_listen_time = 0; // 累计 Listening 时长（单位：us）
 
-    printf("\ndevice state: %d\n", device_state_);
-
+    // ESP_LOGI(TAG, "\ndevice state: %d\n", device_state_);
     device_last_state_ = device_state_;
     if (device_state_ == state) {
         return;
@@ -1109,7 +1108,7 @@ void Application::SetDeviceState(DeviceState state) {
             display->SetStatus(Lang::Strings::STANDBY);
             display->SetEmotion("neutral");
  
-            lvgl_port_lock(50);
+            lvgl_port_lock(0);
             lv_obj_align(display->main_btn_chat_, LV_ALIGN_TOP_MID, 0, 215);
             lv_label_set_text(display->main_btn_chat_label_, "对话");
             lv_obj_clear_flag(display->main_btn_chat_, LV_OBJ_FLAG_HIDDEN);
@@ -1125,6 +1124,7 @@ void Application::SetDeviceState(DeviceState state) {
             }
             // 超过 20 秒就全刷
             if (cnt++ != 0 && total_listen_time > 20 * 1000000) {
+                ESP_LOGI(TAG, "full refresh");
                 FullRefresh();
                 total_listen_time = 0;  // 重置累计时间
             }
@@ -1175,7 +1175,7 @@ void Application::SetDeviceState(DeviceState state) {
         case kDeviceStateSpeaking:
             display->SetStatus(Lang::Strings::SPEAKING);
      
-            lvgl_port_lock(50);
+            lvgl_port_lock(0);
             lv_label_set_text(display->main_btn_pause_chat_label_, "暂停");
             lv_obj_clear_flag(display->main_btn_pause_chat_, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(display->main_btn_chat_, LV_OBJ_FLAG_HIDDEN);
@@ -1320,7 +1320,6 @@ void Application::SetAecMode(AecMode mode) {
 
 
 // Add for XiaoZhi Card
-
 static void sleep_task(void *param) {
     //auto *args = static_cast<SoundPlayParams *>(param);
 
@@ -1396,7 +1395,7 @@ void Application::FullRefresh()
     lvgl_port_lock(0);
     board.UpdateDisplay();
     lv_obj_invalidate(lv_screen_active());   
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 4; i++) {
         lv_refr_now(NULL);
         vTaskDelay(pdMS_TO_TICKS(20));
     }

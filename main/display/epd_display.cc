@@ -118,10 +118,11 @@ EpdDisplay::EpdDisplay(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_handle_
     ESP_LOGI(TAG, "Initialize LVGL");
     lvgl_port_cfg_t port_cfg = ESP_LVGL_PORT_INIT_CONFIG();
     port_cfg.task_stack = 16*1024;
-    port_cfg.task_priority = 6;
+    port_cfg.task_priority = 1;
+    port_cfg.timer_period_ms = 50;
+    port_cfg.task_affinity = 1; // 
     lvgl_port_init(&port_cfg);
 
-    ESP_LOGI(TAG, "Adding LCD scr_main_");
     const lvgl_port_display_cfg_t display_cfg = {
         .io_handle = panel_io_,
         .panel_handle = panel_,
@@ -629,7 +630,7 @@ static void btn_event_cb(lv_event_t * e) {
         lv_obj_del(display->scr_page5_);
         board.UpdateDisplay(); 
         lv_obj_invalidate(lv_screen_active());   
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             lv_refr_now(NULL);
             vTaskDelay(pdMS_TO_TICKS(20));
         }
@@ -654,7 +655,7 @@ static void btn_event_cb(lv_event_t * e) {
         lv_obj_del(display->scr_page5_);
         board.UpdateDisplay();         
         lv_obj_invalidate(lv_screen_active());   
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             lv_refr_now(NULL);
             vTaskDelay(pdMS_TO_TICKS(20));
         }
@@ -724,14 +725,14 @@ static void scr_main_event_cb(lv_event_t * e)  {
         } else if (dir == LV_DIR_LEFT) {
             board.UpdateDisplay();
             lv_obj_invalidate(lv_screen_active());   
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 4; i++) {
                 lv_refr_now(NULL);
                 vTaskDelay(pdMS_TO_TICKS(20));
             }
         } else if (dir == LV_DIR_RIGHT) {
             board.UpdateDisplay();
             lv_obj_invalidate(lv_screen_active());   
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 4; i++) {
                 lv_refr_now(NULL);
                 vTaskDelay(pdMS_TO_TICKS(20));
             }
@@ -754,6 +755,11 @@ static void scr_main_event_cb(lv_event_t * e)  {
             //}
         } else if (btn == display->main_btn_pause_chat_) { 
             auto codec = Board::GetInstance().GetAudioCodec();
+            if (pause) { // 原来状态暂停 --> 新对话 
+                // if (!lv_obj_has_flag(display->content_, LV_OBJ_FLAG_HIDDEN)) {
+                //     lv_label_set_text(display->content_, " ");
+                // }
+            }
             pause = !pause;
             codec->EnableOutput(!pause);
             if (pause) {
@@ -764,7 +770,7 @@ static void scr_main_event_cb(lv_event_t * e)  {
                 lv_obj_clear_flag(display->main_btn_chat_, LV_OBJ_FLAG_HIDDEN);
                 lv_obj_add_flag(display->content_, LV_OBJ_FLAG_HIDDEN);
             } else {
-                display->ShowNotification("说话中...");     
+                display->ShowNotification("说话中...");                 
                 lv_obj_add_flag(display->main_btn_chat_, LV_OBJ_FLAG_HIDDEN);
                 lv_label_set_text(display->main_btn_pause_chat_label_, "暂停");     
                 lv_obj_clear_flag(display->content_, LV_OBJ_FLAG_HIDDEN);
@@ -851,7 +857,7 @@ static void scr_setup_event_cb(lv_event_t * e) {
         display->LoadScreenByName("main");
         board.UpdateDisplay();
         lv_obj_invalidate(lv_screen_active());   
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 4; i++) {
             lv_refr_now(NULL);
             vTaskDelay(pdMS_TO_TICKS(20));
         }

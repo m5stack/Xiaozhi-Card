@@ -174,7 +174,7 @@ void XiaozhiCardBoard::InitializeSpi()
     bus_cfg.miso_io_num = EPD_PIN_MISO;
     bus_cfg.quadwp_io_num = GPIO_NUM_NC;
     bus_cfg.quadhd_io_num = GPIO_NUM_NC;
-    bus_cfg.max_transfer_sz = EPD_RES_HEIGHT * EPD_RES_WIDTH / 8 + 1;   
+    bus_cfg.max_transfer_sz = EPD_RES_HEIGHT * EPD_RES_WIDTH; // / 8 + 1;   
     ESP_ERROR_CHECK(spi_bus_initialize(EPD_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
 }
 
@@ -233,7 +233,7 @@ void XiaozhiCardBoard::InitializeDisplay()
     esp_lcd_panel_io_spi_config_t io_cfg = {};
     io_cfg.dc_gpio_num = EPD_PIN_DC;
     io_cfg.cs_gpio_num = EPD_PIN_CS;
-    io_cfg.pclk_hz = 40 * 1000 * 1000; // SPI Nand 20MHz???
+    io_cfg.pclk_hz = 20 * 1000 * 1000; // SPI Nand 20MHz???
     io_cfg.lcd_cmd_bits = 8;    
     io_cfg.lcd_param_bits = 8;  
     io_cfg.spi_mode = 0;
@@ -743,13 +743,12 @@ void XiaozhiCardBoard::BoardEventTask(void* param)
     auto* self = static_cast<XiaozhiCardBoard*>(param);
     BoardEvent event;
 
-    esp_task_wdt_config_t twdt_config = {
-        .timeout_ms = 6000,
-        .idle_core_mask = (1 << 0) | (1 << 1),
-        .trigger_panic = true, 
-    };
-    esp_task_wdt_init(&twdt_config);
-
+    // esp_task_wdt_config_t twdt_config = {
+    //     .timeout_ms = 6000,
+    //     .idle_core_mask = (1 << 0) | (1 << 1),
+    //     .trigger_panic = true, 
+    // };
+    // esp_task_wdt_init(&twdt_config);
     ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
     ESP_ERROR_CHECK(esp_task_wdt_status(NULL));
     while (1) {
@@ -838,7 +837,7 @@ XiaozhiCardBoard::XiaozhiCardBoard() : DualNetworkBoard(ML307R_PIN_TX, ML307R_PI
     InitializeCharger();
     InitializeGuage();
     InitializeSpi();
-    InitializeStorage();
+    // InitializeStorage();
     InitializeDisplay();  
     InitializeButtons();
     InitializeIndicator();
