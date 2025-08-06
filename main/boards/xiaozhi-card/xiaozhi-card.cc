@@ -257,7 +257,7 @@ void XiaozhiCardBoard::InitializeDisplay()
     ESP_LOGI(TAG, "Initialize touch IO (I2C)");
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
     esp_lcd_panel_io_i2c_config_t tp_io_config = ESP_LCD_TOUCH_IO_I2C_FT5x06_CONFIG();
-    tp_io_config.scl_speed_hz = 400000;
+    tp_io_config.scl_speed_hz = 100000;
     esp_lcd_new_panel_io_i2c(i2c_bus_, &tp_io_config, &tp_io_handle);
 
     ESP_LOGI(TAG, "Initialize touch controller FT5X06");
