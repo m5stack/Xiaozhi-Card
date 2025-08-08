@@ -54,6 +54,8 @@ static const char* const STATE_STRINGS[] = {
     "activating",
     "audio_testing",
     "fatal_error",
+    "setting",
+    "sleep",
     "invalid_state"
 };
 
@@ -617,7 +619,9 @@ void Application::Start() {
         Schedule([this]() {
             auto display = Board::GetInstance().GetDisplay();
             display->SetChatMessage("system", "");
-            SetDeviceState(kDeviceStateIdle);
+            if (GetDeviceLastState() != kDeviceStateIdle) { // ???
+                SetDeviceState(kDeviceStateIdle);            
+            }
         });
     });
     protocol_->OnIncomingJson([this, display](const cJSON* root) {
@@ -776,7 +780,6 @@ void Application::Start() {
 
             if (device_state_ == kDeviceStateIdle) {
                 wake_word_->EncodeWakeWordData();
-
                 if (!protocol_->IsAudioChannelOpened()) {
                     SetDeviceState(kDeviceStateConnecting);
                     if (!protocol_->OpenAudioChannel()) {
@@ -809,12 +812,10 @@ void Application::Start() {
             }
         });
     });
-    wake_word_->StartDetection();
 
     // Wait for the new version check to finish
     xEventGroupWaitBits(event_group_, CHECK_NEW_VERSION_DONE_EVENT, pdTRUE, pdFALSE, portMAX_DELAY);
     SetDeviceState(kDeviceStateIdle);
-
     if (protocol_started) {
         std::string message = std::string(Lang::Strings::VERSION) + ota_.GetCurrentVersion();
         display->ShowNotification(message.c_str());
@@ -828,8 +829,9 @@ void Application::Start() {
             app.PlaySound(Lang::Sounds::P3_WELCOME);
         });
     }
-
     FullRefresh();
+
+    wake_word_->StartDetection();
 
     // Print heap stats
     SystemInfo::PrintHeapStats();
@@ -1070,7 +1072,7 @@ bool Application::ReadAudio(std::vector<int16_t>& data, int sample_rate, int sam
 
 void Application::AbortSpeaking(AbortReason reason) {
     ESP_LOGI(TAG, "Abort speaking");
-   // aborted_ = true; //
+    // aborted_ = true; //
     protocol_->SendAbortSpeaking(reason);
 }
 
@@ -1124,7 +1126,6 @@ void Application::SetDeviceState(DeviceState state) {
             }
             // 超过 20 秒就全刷
             if (cnt++ != 0 && total_listen_time > 20 * 1000000) {
-                ESP_LOGI(TAG, "full refresh");
                 FullRefresh();
                 total_listen_time = 0;  // 重置累计时间
             }
@@ -1193,15 +1194,15 @@ void Application::SetDeviceState(DeviceState state) {
             ResetDecoder();
             break;
         case kDeviceStateSetting: 
+            ResetDecoder();
             audio_processor_->Stop();
             wake_word_->StopDetection();
             break;
         case kDeviceStateSleep: 
-            printf("\n");
             ResetDecoder();
             audio_processor_->Stop();
             wake_word_->StopDetection();
-        break;
+            break;
         default:
             // Do nothing
             break;
@@ -1348,12 +1349,8 @@ void Application::EnterSleepMode(uint8_t mode) {
     ESP_LOGI(TAG, "app: EnterSleepMode");
 
     if (device_state_  != kDeviceStateIdle) {
-        printf("device_state_  != kDeviceStateIdle\n");
-
         wake_word_->StopDetection();
-
         xTaskCreate(sleep_task, "sleep_task", 4096, nullptr, 3, nullptr);
- 
     } else {
         Schedule([this]() {
             auto& board = Board::GetInstance();

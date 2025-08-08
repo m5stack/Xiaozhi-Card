@@ -703,10 +703,10 @@ static void scr_main_event_cb(lv_event_t * e)  {
             }
 
             DeviceState state = app.GetDeviceState();
-            if (state == kDeviceStateListening || state == kDeviceStateSpeaking) {
+            if (state == kDeviceStateListening || state == kDeviceStateSpeaking || state == kDeviceStateIdle) {
                 display->SetChatMessage("system", "");  
-                app.SetDeviceState(kDeviceStateSetting);
                 app.AbortSpeaking(kAbortReasonNone);
+                app.SetDeviceState(kDeviceStateSetting);
             } 
 
             int level = 0;
@@ -740,6 +740,7 @@ static void scr_main_event_cb(lv_event_t * e)  {
     } else if (event == LV_EVENT_CLICKED) {
         lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);  
         if (btn == display->main_btn_chat_) {
+            lv_label_set_text(display->chat_message_label_, ""); // 清空对话信息 
             app.ToggleChatState();
             DeviceState state = app.GetDeviceState();
             if (state != kDeviceStateSpeaking) {
@@ -750,16 +751,9 @@ static void scr_main_event_cb(lv_event_t * e)  {
             if (state == kDeviceStateIdle || state == kDeviceStateSpeaking) {
                 pause = false;
             }
-            ///if (pause) {
             lv_obj_clear_flag(display->content_, LV_OBJ_FLAG_HIDDEN);
-            //}
         } else if (btn == display->main_btn_pause_chat_) { 
             auto codec = Board::GetInstance().GetAudioCodec();
-            if (pause) { // 原来状态暂停 --> 新对话 
-                // if (!lv_obj_has_flag(display->content_, LV_OBJ_FLAG_HIDDEN)) {
-                //     lv_label_set_text(display->content_, " ");
-                // }
-            }
             pause = !pause;
             codec->EnableOutput(!pause);
             if (pause) {
@@ -829,12 +823,10 @@ static void scr_setup_event_cb(lv_event_t * e) {
         sprintf(buf, "%d", vol);
         lv_label_set_text(display->label_volume_, buf);
     } else if (btn == display->setup_btn_sleep_) { // 休眠 
-        printf("\nsetup_btn_sleep_\n");
         if (display->on_manual_sleep_) {
             display->on_manual_sleep_();
         }
     } else if (btn == display->setup_btn_shutdown_) { // 关机 
-        printf("\nsetup_btn_shutdown_\n");
         if (display->on_shutdown_) {
             display->on_shutdown_();
         }
@@ -851,10 +843,11 @@ static void scr_setup_event_cb(lv_event_t * e) {
             lv_obj_add_flag(display->setup_btn_confirm_, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(display->setup_btn_cancel_, LV_OBJ_FLAG_HIDDEN);
         }
-        if (last_state == kDeviceStateListening || last_state == kDeviceStateSpeaking) {
+        if (last_state == kDeviceStateListening || last_state == kDeviceStateSpeaking || state == kDeviceStateSetting) {
             app.SetDeviceState(kDeviceStateIdle);
         } 
         display->LoadScreenByName("main");
+        lv_label_set_text(display->chat_message_label_, ""); // 清空对话信息 
         board.UpdateDisplay();
         lv_obj_invalidate(lv_screen_active());   
         for (int i = 0; i < 4; i++) {

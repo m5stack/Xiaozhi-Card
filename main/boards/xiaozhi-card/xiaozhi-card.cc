@@ -233,7 +233,7 @@ void XiaozhiCardBoard::InitializeDisplay()
     esp_lcd_panel_io_spi_config_t io_cfg = {};
     io_cfg.dc_gpio_num = EPD_PIN_DC;
     io_cfg.cs_gpio_num = EPD_PIN_CS;
-    io_cfg.pclk_hz = 20 * 1000 * 1000; // SPI Nand 20MHz???
+    io_cfg.pclk_hz = 40 * 1000 * 1000; // SPI Nand 20MHz???
     io_cfg.lcd_cmd_bits = 8;    
     io_cfg.lcd_param_bits = 8;  
     io_cfg.spi_mode = 0;
@@ -837,7 +837,7 @@ XiaozhiCardBoard::XiaozhiCardBoard() : DualNetworkBoard(ML307R_PIN_TX, ML307R_PI
     InitializeCharger();
     InitializeGuage();
     InitializeSpi();
-    // InitializeStorage();
+    // InitializeStorage(); // 
     InitializeDisplay();  
     InitializeButtons();
     InitializeIndicator();
